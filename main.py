@@ -5,7 +5,10 @@ import pandas as pd
 import os
 
 from config import USERS_DATASET_PATH
+
 from llm.gemini_for_generating_meal_plan import GeminiForMealPlanGeneration
+from llm.gemini_for_personalized_recepies import GeminiForPersonalizedRecipes
+
 from food_databases.management import RecipesStorage  # Importing RecipesStorage
 
 app = FastAPI()
@@ -42,6 +45,7 @@ class Recipe(BaseModel):
 # Initialize RecipesStorage instance
 recipes_storage = RecipesStorage()
 meal_plan_generator =   GeminiForMealPlanGeneration()
+gemini_recipes = GeminiForPersonalizedRecipes()
 
 
 def initialize_csv():
@@ -152,3 +156,41 @@ def generate_meal_plan(user_name: str):
         raise HTTPException(status_code=500, detail="Error generating meal plan: " + meal_plan["error"])
     
     return {"user_name": user_name, "meal_plan": meal_plan}
+
+
+@app.get("/users/{username}/recipes")
+def recipes_for_user(username: str):
+    # Load user data
+    df = load_users()
+    user = df[df['name'] == username]
+    
+    # Check if user exists
+    if user.empty:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Extract user preferences and allergies
+    user_info = user.iloc[0].to_dict()  # Get user row as dictionary
+    positive_products = user_info.get("food_preferences", "")
+    negative_products = user_info.get("food_allergies", "")
+    specific_diet = user_info.get("specific_diet", "")
+    chronic_illnesses = user_info.get("chronic_illnesses", "")
+
+
+    filtered_recipes = recipes_storage.filter(positive_products.split(), negative_products.split())
+    filtered_recipes = pd.concat([filtered_recipes, recipes_storage.filter([], negative_products.split())])
+
+    
+    # Prepare user context
+    user_context = {
+        "preferred_products": positive_products,
+        "allergic_products": negative_products,
+        "specific_diet": specific_diet,
+        "chronic_illnesses": chronic_illnesses,
+    }
+    
+    # Generate personalized recipes
+    recipies = list() 
+
+    filtered_recipes.apply(lambda i: recipies.append(gemini_recipes(user_context, i)) if len(recipies) < 3 else recipies.append(i), axis=1)
+    
+    return {"username": username, "personalized_recipes": recipies}

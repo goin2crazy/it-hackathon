@@ -24,13 +24,20 @@ class RecipesStorage:
             ingredient_names = [item["name"].lower() for item in ingredients]
             return any(pos_prod.lower() in ingredient_names for pos_prod in positive_products)
         
-        def contains_negative_products(ingredients):
+        def contains_negative_products(i):
             # Check if any ingredient matches any negative product
+            ingredients = i['ingredients']
             ingredient_names = [item["name"].lower() for item in ingredients]
-            return any(neg_prod.lower() in ingredient_names for neg_prod in negative_products)
+
+            ing = any(neg_prod.lower() in ingredient_names for neg_prod in negative_products)
+            steps = any(neg_prod.lower() in i['steps'] for neg_prod in negative_products)
+            name = any(neg_prod.lower() in i['name'] for neg_prod in negative_products)
+
+
+            return any([ing, steps, name])
         
         # Extract the ingredients column, filter, and sort
-        filtered_df = self.df[~self.df['ingredients'].apply(contains_negative_products)]
+        filtered_df = self.df[~self.df.apply(contains_negative_products, axis=1)]
         if len(positive_products): 
             filtered_df = filtered_df[filtered_df['ingredients'].apply(contains_positive_products)]
 
@@ -55,7 +62,7 @@ class RecipesStorage:
         """
         new_recipe = pd.DataFrame([recipe])  # Convert the recipe dict to a DataFrame
         self.df = pd.concat([self.df, new_recipe], ignore_index=True)  # Append to the main DataFrame
-        
+
 
     def update(self, recipe_name, updated_info):
         """
