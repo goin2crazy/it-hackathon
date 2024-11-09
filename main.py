@@ -4,7 +4,7 @@ from typing import Optional, List
 import pandas as pd
 import os
 
-from config import USERS_DATASET_PATH
+from config import USERS_DATASET_PATH, MAX_RECEPIES_AT_REQUEST
 
 from llm.gemini_for_generating_meal_plan import GeminiForMealPlanGeneration
 from llm.gemini_for_personalized_recepies import GeminiForPersonalizedRecipes
@@ -134,7 +134,10 @@ def delete_recipe(recipe_name: str):
 def filter_recipes(positive_products: List[str], negative_products: List[str]):
 
     filtered_recipes = recipes_storage.filter(positive_products, negative_products)
-    return {'filteref_recepies': filtered_recipes.to_dict()}
+    recepies = list() 
+
+    filtered_recipes.apply(lambda i: recepies.append(i), axis=1)
+    return {'filteref_recepies': recepies[:MAX_RECEPIES_AT_REQUEST]}
 
 # Endpoint to generate a meal plan for a user by name
 
@@ -176,8 +179,8 @@ def recipes_for_user(username: str):
     chronic_illnesses = user_info.get("chronic_illnesses", "")
 
 
-    filtered_recipes = recipes_storage.filter(positive_products.split(), negative_products.split())
-    filtered_recipes = pd.concat([filtered_recipes, recipes_storage.filter([], negative_products.split())])
+    filtered_recipes = recipes_storage.filter(str(positive_products).split(), str(negative_products).split())
+    filtered_recipes = pd.concat([filtered_recipes, recipes_storage.filter([], str(negative_products).split())])
 
     
     # Prepare user context
@@ -193,4 +196,4 @@ def recipes_for_user(username: str):
 
     filtered_recipes.apply(lambda i: recipies.append(gemini_recipes(user_context, i)) if len(recipies) < 3 else recipies.append(i), axis=1)
     
-    return {"username": username, "personalized_recipes": recipies}
+    return {"username": username, "personalized_recipes": recipies[:MAX_RECEPIES_AT_REQUEST]}

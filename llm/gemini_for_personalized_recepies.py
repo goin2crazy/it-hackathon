@@ -42,21 +42,20 @@ class GeminiForPersonalizedRecipes(GeminiInference):
         Custom method to process the model's output.
         It extracts the JSON data enclosed within <start> and <end> tags.
         """
+        # try: 
         start_tag = "<start>"
         end_tag = "<end>"
         
-        start_index = response.find(start_tag)
-        end_index = response.find(end_tag, start_index)
-        
-        # Check if both tags are found
-        if start_index != -1 and end_index != -1:
-            # Extract the JSON content between tags
-            extracted_content = response[start_index + len(start_tag):end_index].strip()
-            extracted_content  = extracted_content.split("</starts>")[0]
-            return eval(extracted_content)
-        else:
+        # Extract the JSON content between tags
+        extracted_content = response.split(start_tag)[-1]
+        extracted_content = extracted_content.split(end_tag)[0]
+
+        extracted_content  = extracted_content.split("</start>")[-1]
+        extracted_content  = extracted_content.split("</end>")[0]
+        return eval(extracted_content)
+        # except:
             # Handle case where tags are missing or malformed response
-            print( {"error": "Response format is incorrect or tags are missing"})
-            return response
+            # print( {"error": "Response format is incorrect or tags are missing"})
+            # return response
     
 

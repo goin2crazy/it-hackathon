@@ -15,6 +15,10 @@ class RecipesStorage:
         # Convert the string to a list of dictionaries
         self.df['ingredients'] = self.df['ingredients'].apply(lambda ing: [eval(i.replace(']', '').replace('[', '')) for i in ing.split('\n')])
 
+    def save(self):
+        """Save the current DataFrame to the CSV file."""
+        self.df.to_csv(RES_DATA_PATH, index=False)
+
     def filter(self, positive_products, negative_products):
         # Filter rows based on the ingredients column to include only recipes that
         # do not contain any negative products, sorted by the presence of positive products
@@ -32,7 +36,6 @@ class RecipesStorage:
             ing = any(neg_prod.lower() in ingredient_names for neg_prod in negative_products)
             steps = any(neg_prod.lower() in i['steps'] for neg_prod in negative_products)
             name = any(neg_prod.lower() in i['name'] for neg_prod in negative_products)
-
 
             return any([ing, steps, name])
         
@@ -55,18 +58,18 @@ class RecipesStorage:
 
     def add(self, recipe):
         """
-        Add a new recipe to the DataFrame.
+        Add a new recipe to the DataFrame and save changes to CSV.
         
         Parameters:
         recipe (dict): A dictionary containing the recipe information, with keys matching DataFrame columns.
         """
         new_recipe = pd.DataFrame([recipe])  # Convert the recipe dict to a DataFrame
         self.df = pd.concat([self.df, new_recipe], ignore_index=True)  # Append to the main DataFrame
-
+        self.save()  # Save changes to CSV
 
     def update(self, recipe_name, updated_info):
         """
-        Update an existing recipe based on the recipe name.
+        Update an existing recipe based on the recipe name and save changes to CSV.
         
         Parameters:
         recipe_name (str): The name of the recipe to update.
@@ -74,16 +77,17 @@ class RecipesStorage:
         """
         # Locate the recipe by name and update its details
         self.df.loc[self.df['name'] == recipe_name, updated_info.keys()] = updated_info.values()
-
+        self.save()  # Save changes to CSV
 
     def delete(self, recipe_name):
         """
-        Delete a recipe from the DataFrame based on the recipe name.
+        Delete a recipe from the DataFrame based on the recipe name and save changes to CSV.
         
         Parameters:
         recipe_name (str): The name of the recipe to delete.
         """
         self.df = self.df[self.df['name'] != recipe_name]  # Filter out the recipe
+        self.save()  # Save changes to CSV
 
 
 # Run example
