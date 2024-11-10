@@ -25,29 +25,49 @@ class RecipesStorage:
 
         def contains_positive_products(ingredients):
             # Check if any ingredient matches any positive product
-            ingredient_names = [item["name"].lower() for item in ingredients]
-            return any(pos_prod.lower() in ingredient_names for pos_prod in positive_products)
+            try: 
+                ingredient_names = [item["name"].lower() for item in ingredients]
+                return any(pos_prod.lower() in ingredient_names for pos_prod in positive_products)
+
+            except Exception as e: 
+                print(e)
+                print(i)
+                return False
         
         def contains_negative_products(i):
-            # Check if any ingredient matches any negative product
-            ingredients = i['ingredients']
-            ingredient_names = [item["name"].lower() for item in ingredients]
+            try: 
+                # Check if any ingredient matches any negative product
+                ingredients = i['ingredients'][0]
+                ingredient_names = [item["name"].lower() for item in ingredients]
 
-            ing = any(neg_prod.lower() in ingredient_names for neg_prod in negative_products)
-            steps = any(neg_prod.lower() in i['steps'] for neg_prod in negative_products)
-            name = any(neg_prod.lower() in i['name'] for neg_prod in negative_products)
+                ing = any(neg_prod.lower() in ingredient_names for neg_prod in negative_products)
+                steps = any(neg_prod.lower() in i['steps'] for neg_prod in negative_products)
+                name = any(neg_prod.lower() in i['name'] for neg_prod in negative_products)
 
-            return any([ing, steps, name])
+                return any([ing, steps, name])
+            except Exception as e: 
+                print(e)
+                print(i)
+                return True 
         
         # Extract the ingredients column, filter, and sort
         filtered_df = self.df[~self.df.apply(contains_negative_products, axis=1)]
         if len(positive_products): 
             filtered_df = filtered_df[filtered_df['ingredients'].apply(contains_positive_products)]
 
+
+        def calculate_score(ingredients): 
+            try: 
+                return sum(1 for ingredient in ingredients if ingredient["name"].lower() in positive_products)
+            except Exception as e: 
+                print(e)
+                print(ingredients)
+                return 0 
+
         # Sort by the count of positive products in each recipe
         filtered_df = filtered_df.assign(
             positive_count=filtered_df['ingredients'].apply(
-                lambda ingredients: sum(1 for ingredient in ingredients if ingredient["name"].lower() in positive_products)
+                lambda ingredients: calculate_score(ingredients)
             )
         ).sort_values(by='positive_count', ascending=False)
 
