@@ -61,7 +61,7 @@ initialize_csv()
 
 # Helper to load users
 def load_users():
-    return pd.read_csv(CSV_FILE)
+    return pd.read_csv(CSV_FILE).dropna()
 
 # Helper to save users
 def save_users(df):

@@ -12,6 +12,7 @@ class RecipesStorage:
         # Load the dataframe from RES_DATA_PATH
         # Columns: name, review, rating, meta, ingredients, steps, cooks_note, editors_note, nutrition_facts, url
         self.df = pd.read_csv(RES_DATA_PATH)
+        self.df = self.df.dropna() 
         # Convert the string to a list of dictionaries
         self.df['ingredients'] = self.df['ingredients'].apply(lambda ing: [eval(i.replace(']', '').replace('[', '')) for i in ing.split('\n')])
 
