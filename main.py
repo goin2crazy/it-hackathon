@@ -134,10 +134,7 @@ def delete_recipe(recipe_name: str):
 def filter_recipes(positive_products: List[str], negative_products: List[str]):
 
     filtered_recipes = recipes_storage.filter(positive_products, negative_products)
-    recepies = list() 
-
-    filtered_recipes.apply(lambda i: recepies.append(i), axis=1)
-    return {'filteref_recepies': recepies[:MAX_RECEPIES_AT_REQUEST]}
+    return {'filtered_recepies': filtered_recipes.head(MAX_RECEPIES_AT_REQUEST).to_dict()}
 
 # Endpoint to generate a meal plan for a user by name
 
@@ -191,9 +188,8 @@ def recipes_for_user(username: str):
         "chronic_illnesses": chronic_illnesses,
     }
     
-    # Generate personalized recipes
-    recipies = list() 
+    personalized_recepies = list() 
+    for i in range(3): 
+        personalized_recepies.append(gemini_recipes(user_context, filtered_recipes.iloc[i]))    
 
-    filtered_recipes.apply(lambda i: recipies.append(gemini_recipes(user_context, i)) if len(recipies) < 3 else recipies.append(i), axis=1)
-    
-    return {"username": username, "personalized_recipes": recipies[:MAX_RECEPIES_AT_REQUEST]}
+    return {"username": username, "personalized_recipes": personalized_recepies, "other_recepies": filtered_recipes.iloc[3:MAX_RECEPIES_AT_REQUEST]}

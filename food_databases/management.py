@@ -15,6 +15,8 @@ class RecipesStorage:
         self.df = self.df.dropna() 
         # Convert the string to a list of dictionaries
         self.df['ingredients'] = self.df['ingredients'].apply(lambda ing: [eval(i.replace(']', '').replace('[', '')) for i in ing.split('\n')])
+        self.df['ingredients'] = self.df['ingredients'].apply(lambda i: [i for i in i[0]]) 
+        print(self.df['ingredients'][0])
 
     def save(self):
         """Save the current DataFrame to the CSV file."""
@@ -29,16 +31,17 @@ class RecipesStorage:
             try: 
                 ingredient_names = [item["name"].lower() for item in ingredients]
                 return any(pos_prod.lower() in ingredient_names for pos_prod in positive_products)
-
-            except Exception as e: 
-                print(e)
-                print(i)
+                
+            except: 
+                print("POSITIVE: ", ingredients)
                 return False
+
         
         def contains_negative_products(i):
+            # Check if any ingredient matches any negative product
             try: 
-                # Check if any ingredient matches any negative product
-                ingredients = i['ingredients'][0]
+                ingredients = i['ingredients']
+
                 ingredient_names = [item["name"].lower() for item in ingredients]
 
                 ing = any(neg_prod.lower() in ingredient_names for neg_prod in negative_products)
@@ -46,10 +49,9 @@ class RecipesStorage:
                 name = any(neg_prod.lower() in i['name'] for neg_prod in negative_products)
 
                 return any([ing, steps, name])
-            except Exception as e: 
-                print(e)
-                print(i)
-                return True 
+            except: 
+                print("NEGATIVE: ", ingredients)
+                return True
         
         # Extract the ingredients column, filter, and sort
         filtered_df = self.df[~self.df.apply(contains_negative_products, axis=1)]
